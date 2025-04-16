@@ -1,34 +1,95 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>URL短链接生成器</title>
+    <title>URL Shortener</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     <style>
+      :root {
+        --primary-color: #4361ee;
+        --primary-dark: #3a56d4;
+        --secondary-color: #7209b7;
+        --accent-color: #4cc9f0;
+        --success-color: #2ecc71;
+        --warning-color: #f39c12;
+        --error-color: #e74c3c;
+        --light-bg: #f8f9fa;
+        --dark-bg: #1f2937;
+        --text-dark: #1e293b;
+        --text-light: #f8fafc;
+        --border-radius: 12px;
+        --box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        --transition: all 0.3s ease;
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
       body {
-        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
         margin: 0;
         padding: 0;
         display: flex;
         flex-direction: column;
-        align-items: center;
         min-height: 100vh;
-        background-color: #f5f5f5;
-        color: #333;
+        background-color: var(--light-bg);
+        color: var(--text-dark);
+        line-height: 1.6;
       }
 
       header {
-        background-color: #2c3e50;
-        color: white;
+        background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+        color: var(--text-light);
         width: 100%;
         text-align: center;
-        padding: 1rem 0;
-        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        padding: 1.5rem 0;
+        box-shadow: var(--box-shadow);
+        position: relative;
+        overflow: hidden;
       }
 
-      h1 {
+      header::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: repeating-linear-gradient(
+          45deg,
+          rgba(255, 255, 255, 0.03),
+          rgba(255, 255, 255, 0.03) 10px,
+          rgba(255, 255, 255, 0.06) 10px,
+          rgba(255, 255, 255, 0.06) 20px
+        );
+        transform: rotate(30deg);
+        z-index: 0;
+      }
+
+      header h1 {
         margin: 0;
-        font-size: 2rem;
+        font-size: 2.5rem;
+        font-weight: 700;
+        position: relative;
+        z-index: 1;
+      }
+
+      header .logo {
+        margin-bottom: 0.5rem;
+        font-size: 3rem;
+        color: var(--accent-color);
+      }
+
+      .tagline {
+        font-size: 1.1rem;
+        opacity: 0.9;
+        margin-top: 0.5rem;
+        position: relative;
+        z-index: 1;
       }
 
       .container {
@@ -37,8 +98,9 @@
         margin: 2rem auto;
         padding: 2rem;
         background-color: white;
-        border-radius: 8px;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        border-radius: var(--border-radius);
+        box-shadow: var(--box-shadow);
+        transition: var(--transition);
       }
 
       .form-group {
@@ -47,238 +109,568 @@
 
       label {
         display: block;
-        margin-bottom: 0.5rem;
-        font-weight: bold;
+        margin-bottom: 0.75rem;
+        font-weight: 600;
+        color: var(--text-dark);
+        font-size: 1.1rem;
+      }
+
+      .input-container {
+        position: relative;
+        display: flex;
+        align-items: center;
+      }
+
+      .input-icon {
+        position: absolute;
+        left: 1rem;
+        color: #64748b;
       }
 
       input[type="url"] {
         width: 100%;
-        padding: 0.75rem;
+        padding: 0.9rem 1rem 0.9rem 2.5rem;
         font-size: 1rem;
-        border: 1px solid #ddd;
-        border-radius: 4px;
+        border: 2px solid #e2e8f0;
+        border-radius: var(--border-radius);
         box-sizing: border-box;
+        transition: var(--transition);
+      }
+
+      input[type="url"]:focus {
+        outline: none;
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.15);
+      }
+
+      input[type="url"]::placeholder {
+        color: #94a3b8;
       }
 
       button {
-        background-color: #3498db;
-        color: white;
+        font-weight: 600;
         border: none;
-        padding: 0.75rem 1.5rem;
+        padding: 0.9rem 1.75rem;
         font-size: 1rem;
-        border-radius: 4px;
+        border-radius: var(--border-radius);
         cursor: pointer;
-        transition: background-color 0.3s;
+        transition: var(--transition);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
       }
 
-      button:hover {
-        background-color: #2980b9;
+      #shorten-btn {
+        background-color: var(--primary-color);
+        color: white;
+        width: 100%;
+      }
+
+      #shorten-btn:hover {
+        background-color: var(--primary-dark);
+        transform: translateY(-2px);
+      }
+
+      #shorten-btn:active {
+        transform: translateY(0);
       }
 
       .result {
         margin-top: 2rem;
-        padding: 1rem;
-        border: 1px solid #ddd;
-        border-radius: 4px;
+        padding: 1.25rem;
+        border: 2px dashed #e2e8f0;
+        border-radius: var(--border-radius);
         display: none;
+        background-color: #f8fafc;
+        transition: var(--transition);
       }
 
       .result.show {
         display: block;
+        animation: fadeIn 0.5s ease;
+      }
+
+      @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+
+      .result h3 {
+        margin-bottom: 0.75rem;
+        color: var(--primary-color);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .short-url-container {
+        background-color: white;
+        padding: 0.75rem 1rem;
+        border-radius: var(--border-radius);
+        border: 1px solid #e2e8f0;
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        overflow: hidden;
       }
 
       .short-url {
-        font-weight: bold;
-        color: #3498db;
+        font-weight: 600;
+        color: var(--primary-color);
         word-break: break-all;
+        flex-grow: 1;
+        margin-right: 0.5rem;
+      }
+
+      .btn-container {
+        display: flex;
+        gap: 0.75rem;
+        flex-wrap: wrap;
       }
 
       .copy-btn {
-        background-color: #2ecc71;
-        margin-top: 0.5rem;
+        background-color: var(--success-color);
+        color: white;
+        flex: 1;
+        min-width: 140px;
       }
 
       .copy-btn:hover {
         background-color: #27ae60;
+        transform: translateY(-2px);
+      }
+
+      .redirect-btn {
+        background-color: var(--warning-color);
+        color: white;
+        flex: 1;
+        min-width: 140px;
+      }
+
+      .redirect-btn:hover {
+        background-color: #e67e22;
+        transform: translateY(-2px);
       }
 
       .error {
-        color: #e74c3c;
-        margin-top: 0.5rem;
+        color: var(--error-color);
+        margin-top: 1rem;
         display: none;
+        padding: 0.75rem;
+        background-color: #fef2f2;
+        border-radius: var(--border-radius);
+        border-left: 4px solid var(--error-color);
+        font-size: 0.95rem;
       }
 
       .loading {
         display: none;
-        margin-top: 1rem;
+        margin: 1.5rem 0;
         text-align: center;
       }
 
       .spinner {
-        border: 4px solid rgba(0, 0, 0, 0.1);
-        border-radius: 50%;
-        border-top: 4px solid #3498db;
-        width: 30px;
-        height: 30px;
-        animation: spin 1s linear infinite;
-        margin: 0 auto;
+        display: inline-block;
+        width: 40px;
+        height: 40px;
       }
 
-      @keyframes spin {
-        0% {
-          transform: rotate(0deg);
-        }
-        100% {
-          transform: rotate(360deg);
-        }
+      .spinner:after {
+        content: " ";
+        display: block;
+        width: 32px;
+        height: 32px;
+        margin: 4px;
+        border-radius: 50%;
+        border: 4px solid var(--primary-color);
+        border-color: var(--primary-color) transparent var(--primary-color) transparent;
+        animation: spinner 1.2s linear infinite;
+      }
+
+      @keyframes spinner {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+
+      .loading p {
+        margin-top: 0.75rem;
+        color: #64748b;
+        font-size: 0.95rem;
       }
 
       footer {
         margin-top: auto;
-        padding: 1rem;
-        background-color: #2c3e50;
-        color: white;
+        padding: 1.5rem 1rem;
+        background-color: var(--dark-bg);
+        color: var(--text-light);
         width: 100%;
         text-align: center;
+      }
+
+      .footer-content {
+        max-width: 800px;
+        margin: 0 auto;
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+      }
+
+      .copyright {
+        font-size: 0.9rem;
+        color: #94a3b8;
+      }
+
+      /* Toast Notification */
+      .toast {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background-color: var(--success-color);
+        color: white;
+        padding: 1rem 1.5rem;
+        border-radius: var(--border-radius);
+        box-shadow: var(--box-shadow);
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        z-index: 1000;
+        transform: translateY(-100px);
+        opacity: 0;
+        transition: all 0.3s ease;
+      }
+
+      .toast.show {
+        transform: translateY(0);
+        opacity: 1;
+      }
+
+      .toast i {
+        font-size: 1.25rem;
+      }
+
+      /* Responsive Design */
+      @media (max-width: 768px) {
+        header h1 {
+          font-size: 2rem;
+        }
+
+        .container {
+          padding: 1.5rem;
+          width: 95%;
+        }
+
+        .btn-container {
+          flex-direction: column;
+        }
+
+        .copy-btn, .redirect-btn {
+          width: 100%;
+        }
+      }
+
+      @media (max-width: 480px) {
+        header h1 {
+          font-size: 1.75rem;
+        }
+
+        .tagline {
+          font-size: 1rem;
+        }
+
+        .container {
+          padding: 1.25rem;
+          margin: 1rem auto;
+        }
+
+        label {
+          font-size: 1rem;
+        }
+
+        input[type="url"] {
+          padding: 0.75rem 1rem 0.75rem 2.5rem;
+        }
+
+        button {
+          padding: 0.75rem 1.5rem;
+        }
+
+        .result {
+          padding: 1rem;
+        }
+
+      }
+
+      /* Animation for the URL input */
+      @keyframes pulse {
+        0% { box-shadow: 0 0 0 0 rgba(67, 97, 238, 0.4); }
+        70% { box-shadow: 0 0 0 10px rgba(67, 97, 238, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(67, 97, 238, 0); }
+      }
+
+      .pulse {
+        animation: pulse 1.5s infinite;
+      }
+
+      /* Dark mode support */
+      @media (prefers-color-scheme: dark) {
+        body {
+          background-color: #121212;
+          color: var(--text-light);
+        }
+
+        .container {
+          background-color: #1e1e1e;
+          border: 1px solid #333;
+        }
+
+        input[type="url"] {
+          background-color: #2d2d2d;
+          border-color: #444;
+          color: var(--text-light);
+        }
+
+        input[type="url"]::placeholder {
+          color: #aaa;
+        }
+
+        .result {
+          background-color: #2d2d2d;
+          border-color: #444;
+        }
+
+        .short-url-container {
+          background-color: #242424;
+          border-color: #444;
+        }
+
+        .error {
+          background-color: rgba(231, 76, 60, 0.1);
+        }
       }
     </style>
   </head>
   <body>
     <header>
-      <h1>URL短链接生成器</h1>
+      <div class="logo">
+        <i class="fas fa-link"></i>
+      </div>
+      <h1>URL Shortener</h1>
+      <p class="tagline">Transform long URLs into short, shareable links</p>
     </header>
 
     <div class="container">
       <div class="form-group">
-        <label for="original-url">输入一个长URL来生成短链接：</label>
-        <input
-          type="url"
-          id="original-url"
-          placeholder="https://example.com/very/long/path/that/needs/shortening"
-          required
-        />
+        <label for="original-url">Enter a long URL to generate a short link:</label>
+        <div class="input-container">
+          <i class="fas fa-globe input-icon"></i>
+          <input
+            type="url"
+            id="original-url"
+            placeholder="https://example.com/very/long/path/that/needs/shortening"
+            required
+          />
+        </div>
       </div>
 
-      <button id="shorten-btn">生成短链接</button>
+      <button id="shorten-btn">
+        <i class="fas fa-cut"></i>
+        Generate Short Link
+      </button>
 
       <div class="loading">
         <div class="spinner"></div>
-        <p>正在创建短链接...</p>
+        <p>Creating your short link...</p>
       </div>
 
       <div class="error" id="error-message"></div>
 
       <div class="result" id="result-box">
-        <h3>您的短链接：</h3>
-        <p class="short-url" id="short-url"></p>
-        <button class="copy-btn" id="copy-btn">复制到剪贴板</button>
+        <h3><i class="fas fa-check-circle"></i> Your Short Link is Ready!</h3>
+        <div class="short-url-container">
+          <span class="short-url" id="short-url"></span>
+          <i class="fas fa-external-link-alt" id="link-icon" style="color: #64748b;"></i>
+        </div>
+        <div class="btn-container">
+          <button class="copy-btn" id="copy-btn">
+            <i class="fas fa-copy"></i>
+            Copy to Clipboard
+          </button>
+          <button class="redirect-btn" id="redirect-btn">
+            <i class="fas fa-external-link-alt"></i>
+            Open Link
+          </button>
+        </div>
       </div>
     </div>
 
-    <footer>&copy; 2025 URL短链接生成器 - AWS Serverless项目</footer>
+    <div class="toast" id="toast">
+      <i class="fas fa-check-circle"></i>
+      <span id="toast-message">Copied to clipboard!</span>
+    </div>
+
+    <footer>
+      <div class="footer-content">
+        <div class="copyright">&copy; 2025 URL Shortener - Shiyu Huang</div>
+      </div>
+    </footer>
 
     <script>
-      // DOM元素
+      // DOM elements
       const originalUrlInput = document.getElementById("original-url");
       const shortenBtn = document.getElementById("shorten-btn");
       const resultBox = document.getElementById("result-box");
       const shortUrlDisplay = document.getElementById("short-url");
       const copyBtn = document.getElementById("copy-btn");
+      const redirectBtn = document.getElementById("redirect-btn");
       const loadingIndicator = document.querySelector(".loading");
       const errorMessage = document.getElementById("error-message");
+      const toast = document.getElementById("toast");
+      const toastMessage = document.getElementById("toast-message");
+      const linkIcon = document.getElementById("link-icon");
 
-      // API端点 - 替换为您实际的API Gateway URL
-      // 注意：此处直接使用API Gateway URL，不再使用CloudFront
+      // API endpoint - Replace with your actual API Gateway URL
       const API_ENDPOINT = "https://iry8q8ldu5.execute-api.us-east-1.amazonaws.com/dev/shorten";
 
-      // 函数：缩短URL
+      // Add focus animation to input
+      originalUrlInput.addEventListener("focus", function() {
+        this.classList.add("pulse");
+      });
+
+      originalUrlInput.addEventListener("blur", function() {
+        this.classList.remove("pulse");
+      });
+
+      // Function: Show toast notification
+      function showToast(message, isSuccess = true) {
+        toast.style.backgroundColor = isSuccess ? 'var(--success-color)' : 'var(--error-color)';
+        toastMessage.textContent = message;
+        toast.classList.add("show");
+        
+        setTimeout(() => {
+          toast.classList.remove("show");
+        }, 3000);
+      }
+
+      // Function: Shorten URL
       async function shortenUrl() {
-        // 重置UI
+        // Reset UI
         resultBox.classList.remove("show");
         errorMessage.style.display = "none";
 
-        // 从输入框获取URL
+        // Get URL from input
         const url = originalUrlInput.value.trim();
 
-        // 验证URL
+        // Validate URL
         if (!url) {
-          showError("请输入URL");
+          showError("Please enter a URL");
+          return;
+        }
+
+        // Basic URL validation
+        try {
+          new URL(url);
+        } catch (e) {
+          showError("Please enter a valid URL including http:// or https://");
           return;
         }
 
         try {
-          // 显示加载指示器
+          // Show loading indicator
           loadingIndicator.style.display = "block";
+          shortenBtn.disabled = true;
+          shortenBtn.style.opacity = "0.7";
 
-          // 调用API
+          // Call API
           const response = await fetch(API_ENDPOINT, {
             method: "POST",
-            mode: 'cors', // 确保使用 cors 模式
-            credentials: 'omit', // 对于混合内容场景，不发送 cookies
+            mode: 'cors',
+            credentials: 'omit',
             headers: {
               "Content-Type": "application/json",
             },
             body: JSON.stringify({ url }),
           });
 
-          // 隐藏加载指示器
+          // Hide loading indicator
           loadingIndicator.style.display = "none";
+          shortenBtn.disabled = false;
+          shortenBtn.style.opacity = "1";
 
           if (!response.ok) {
             const errorData = await response.json();
-            showError(errorData.error || "无法缩短URL");
+            showError(errorData.error || "Unable to shorten URL");
             return;
           }
 
-          // 处理成功响应
+          // Handle successful response
           const data = await response.json();
 
-          // 显示结果
+          // Display result
           shortUrlDisplay.textContent = data.shortUrl;
           resultBox.classList.add("show");
+          
+          // Smoothly scroll to the result
+          resultBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         } catch (error) {
-          // 隐藏加载指示器
+          // Hide loading indicator
           loadingIndicator.style.display = "none";
+          shortenBtn.disabled = false;
+          shortenBtn.style.opacity = "1";
 
-          console.error("错误:", error);
-          showError("发生意外错误，请重试。");
+          console.error("Error:", error);
+          showError("An unexpected error occurred. Please try again.");
         }
       }
 
-      // 函数：显示错误信息
+      // Function: Show error message
       function showError(message) {
         errorMessage.textContent = message;
         errorMessage.style.display = "block";
+        errorMessage.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
       }
 
-      // 函数：复制短URL到剪贴板
-      function copyToClipboard() {
-        const shortUrl = shortUrlDisplay.textContent;
-
-        navigator.clipboard
-          .writeText(shortUrl)
-          .then(() => {
-            // 临时更新按钮文本
-            const originalText = copyBtn.textContent;
-            copyBtn.textContent = "已复制！";
-
-            setTimeout(() => {
-              copyBtn.textContent = originalText;
-            }, 2000);
-          })
-          .catch((err) => {
-            console.error("复制文本失败: ", err);
-            showError("复制到剪贴板失败");
-          });
+      // Function: Copy to clipboard
+      async function copyToClipboard() {
+        try {
+          await navigator.clipboard.writeText(shortUrlDisplay.textContent);
+          copyBtn.innerHTML = '<i class="fas fa-check"></i> Copied!';
+          
+          // Show toast notification
+          showToast("Link copied to clipboard!");
+          
+          setTimeout(() => {
+            copyBtn.innerHTML = '<i class="fas fa-copy"></i> Copy to Clipboard';
+          }, 2000);
+        } catch (err) {
+          showError("Failed to copy to clipboard");
+          showToast("Failed to copy to clipboard", false);
+        }
       }
 
-      // 事件监听器
+      // Function: Redirect to short URL
+      function redirectToUrl() {
+        window.open(shortUrlDisplay.textContent, '_blank');
+      }
+
+      // Add hover effect to URL display
+      shortUrlDisplay.parentElement.addEventListener("mouseenter", function() {
+        linkIcon.style.color = "var(--primary-color)";
+      });
+      
+      shortUrlDisplay.parentElement.addEventListener("mouseleave", function() {
+        linkIcon.style.color = "#64748b";
+      });
+
+      // Event listeners
       shortenBtn.addEventListener("click", shortenUrl);
       copyBtn.addEventListener("click", copyToClipboard);
+      redirectBtn.addEventListener("click", redirectToUrl);
+      shortUrlDisplay.parentElement.addEventListener("click", redirectToUrl);
 
-      // 在输入框中按Enter键也触发
-      originalUrlInput.addEventListener("keypress", function (event) {
-        if (event.key === "Enter") {
+      // Handle Enter key in input
+      originalUrlInput.addEventListener("keypress", (e) => {
+        if (e.key === "Enter") {
           shortenUrl();
         }
       });
