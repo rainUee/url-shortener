@@ -1,12 +1,12 @@
-// 页面加载完成后执行
+// Execute after page load
 document.addEventListener('DOMContentLoaded', () => {
-  // 初始化所有数据
+  // Initialize all data
   fetchTotalClicks();
   fetchHourlyTrends();
   fetchTopLinks();
   fetchRecentLinks();
   
-  // 设置定时刷新 (每60秒刷新一次)
+  // Set up auto-refresh (every 60 seconds)
   setInterval(() => {
     fetchTotalClicks();
     fetchHourlyTrends();
@@ -15,7 +15,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }, 60000);
 });
 
-// 获取总点击数
+// Get total clicks
 async function fetchTotalClicks() {
   try {
     const response = await fetch('/api/stats/total-clicks');
@@ -23,16 +23,16 @@ async function fetchTotalClicks() {
     
     const data = await response.json();
     
-    // 更新UI
+    // Update UI
     document.getElementById('total-clicks').textContent = data.totalClicks.toLocaleString();
-    document.getElementById('last-updated').textContent = `最后更新: ${new Date(data.timestamp).toLocaleString()}`;
+    document.getElementById('last-updated').textContent = `Last updated: ${new Date(data.timestamp).toLocaleString()}`;
   } catch (error) {
     console.error('Error fetching total clicks:', error);
     document.getElementById('total-clicks').textContent = 'Error loading data';
   }
 }
 
-// 获取按小时的趋势数据
+// Get hourly trend data
 let hourlyChart = null;
 async function fetchHourlyTrends() {
   try {
@@ -41,19 +41,19 @@ async function fetchHourlyTrends() {
     
     const data = await response.json();
     
-    // 如果图表已存在则销毁
+    // Destroy chart if it exists
     if (hourlyChart) {
       hourlyChart.destroy();
     }
     
-    // 创建新图表
+    // Create new chart
     const ctx = document.getElementById('hourly-chart').getContext('2d');
     hourlyChart = new Chart(ctx, {
       type: 'line',
       data: {
         labels: data.labels,
         datasets: [{
-          label: '每小时点击数',
+          label: 'Clicks per Hour',
           data: data.data,
           backgroundColor: 'rgba(54, 162, 235, 0.2)',
           borderColor: 'rgba(54, 162, 235, 1)',
@@ -85,7 +85,7 @@ async function fetchHourlyTrends() {
   }
 }
 
-// 获取热门短链接
+// Get top short links
 async function fetchTopLinks() {
   try {
     const response = await fetch('/api/stats/top-links');
@@ -93,11 +93,11 @@ async function fetchTopLinks() {
     
     const data = await response.json();
     
-    // 更新表格
+    // Update table
     const tableBody = document.getElementById('top-links-table');
     
     if (data.length === 0) {
-      tableBody.innerHTML = '<tr><td colspan="3" class="text-center">暂无数据</td></tr>';
+      tableBody.innerHTML = '<tr><td colspan="3" class="text-center">No data available</td></tr>';
       return;
     }
     
@@ -110,11 +110,11 @@ async function fetchTopLinks() {
     `).join('');
   } catch (error) {
     console.error('Error fetching top links:', error);
-    document.getElementById('top-links-table').innerHTML = '<tr><td colspan="3" class="text-center">加载数据时出错</td></tr>';
+    document.getElementById('top-links-table').innerHTML = '<tr><td colspan="3" class="text-center">Error loading data</td></tr>';
   }
 }
 
-// 获取最近创建的短链接
+// Get recently created short links
 async function fetchRecentLinks() {
   try {
     const response = await fetch('/api/stats/recent-links');
@@ -122,11 +122,11 @@ async function fetchRecentLinks() {
     
     const data = await response.json();
     
-    // 更新表格
+    // Update table
     const tableBody = document.getElementById('recent-links-table');
     
     if (data.length === 0) {
-      tableBody.innerHTML = '<tr><td colspan="3" class="text-center">暂无数据</td></tr>';
+      tableBody.innerHTML = '<tr><td colspan="3" class="text-center">No data available</td></tr>';
       return;
     }
     
@@ -139,12 +139,12 @@ async function fetchRecentLinks() {
     `).join('');
   } catch (error) {
     console.error('Error fetching recent links:', error);
-    document.getElementById('recent-links-table').innerHTML = '<tr><td colspan="3" class="text-center">加载数据时出错</td></tr>';
+    document.getElementById('recent-links-table').innerHTML = '<tr><td colspan="3" class="text-center">Error loading data</td></tr>';
   }
 }
 
-// 辅助函数：根据短码获取完整短链接
+// Helper function: Get full short URL from short code
 function getShortUrl(shortCode) {
-  // 实际环境中应该从配置中获取基础URL
+  // In production, this should be retrieved from configuration
   return `/r/${shortCode}`;
 }

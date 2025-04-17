@@ -7,18 +7,17 @@ A serverless URL shortener built with AWS services, similar to bit.ly. This proj
 This project uses a serverless architecture on AWS with the following services:
 
 - **AWS Lambda**: Handles URL shortening and redirection logic
+- **AWS Fargate/ECS**: Container service for hosting management backend, providing a statistical analysis interface for URL short links
 - **API Gateway**: Provides REST API endpoints and handles HTTP redirects
 - **DynamoDB**: Stores URL mappings (short code → original URL)
-- **CloudFront**: Accelerates access to the API globally
+- **S3**: Stores front-end static web page files and provides a user interface
 - **SQS**: Handles asynchronous processing of visit statistics
-- **CloudTrail**: Records API calls for monitoring and audit
 
 ## Core Features
 
 - **URL Shortening**: Convert long URLs to short, easy-to-share links
 - **URL Redirection**: Automatically redirect from short URLs to original destinations
 - **Visit Statistics**: Track the number of times each short link is accessed
-- **Global Acceleration**: Fast access to the service from anywhere using CloudFront
 
 ## Project Structure
 
@@ -48,7 +47,6 @@ This project uses a serverless architecture on AWS with the following services:
 1. **Clone the repository**
 
    ```bash
-   git clone https://github.com/yourusername/url-shortener.git
    cd url-shortener
    ```
 
@@ -127,7 +125,6 @@ This serverless architecture is designed to be cost-effective and highly scalabl
 - Lambda: ~$0.20
 - DynamoDB: ~$0.50
 - SQS: Free tier likely covers usage
-- CloudFront: ~$0.10
 - Total: ~$4.30/month
 
 ## Future Enhancements
@@ -143,11 +140,6 @@ This serverless architecture is designed to be cost-effective and highly scalabl
 - API rate limiting to prevent abuse
 - Input validation to prevent malicious URLs
 - DynamoDB encryption at rest
-- HTTPS for all communications
-
-## License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
 
 ## Acknowledgments
 

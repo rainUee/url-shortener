@@ -5,37 +5,37 @@ const cors = require('cors');
 const morgan = require('morgan');
 const moment = require('moment');
 
-// 初始化 Express 应用
+// Initialize Express app
 const app = express();
 const port = process.env.PORT || 3000;
 
-// 配置 AWS SDK
+// Configure AWS SDK
 AWS.config.update({
   region: process.env.AWS_REGION || 'us-east-1',
-  // 在 Fargate 中运行时，无需显式提供凭证，将使用任务执行角色
+  // When running in Fargate, no need to explicitly provide credentials, task execution role will be used
 });
 
-// 创建 DynamoDB 客户端
+// Create DynamoDB client
 const dynamodb = new AWS.DynamoDB.DocumentClient();
 const tableName = process.env.DYNAMODB_TABLE || 'url-shortener-table';
 
-// 中间件
+// Middleware
 app.use(cors());
 app.use(morgan('combined'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 
-// 设置视图引擎
+// Set view engine
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
-// 首页 - 仪表板
+// Homepage - Dashboard
 app.get('/', (req, res) => {
   res.render('dashboard');
 });
 
-// API 路由 - 获取总点击数
+// API Route - Get total clicks
 app.get('/api/stats/total-clicks', async (req, res) => {
   try {
     const params = {
@@ -50,12 +50,12 @@ app.get('/api/stats/total-clicks', async (req, res) => {
       timestamp: new Date().toISOString()
     });
   } catch (error) {
-    console.error('获取总点击数失败:', error);
-    res.status(500).json({ error: '获取数据失败' });
+    console.error('Failed to get total clicks:', error);
+    res.status(500).json({ error: 'Failed to get data' });
   }
 });
 
-// API 路由 - 获取按小时的点击趋势
+// API Route - Get hourly click trends
 app.get('/api/stats/hourly-trends', async (req, res) => {
   try {
     const params = {
@@ -65,7 +65,7 @@ app.get('/api/stats/hourly-trends', async (req, res) => {
     
     const data = await dynamodb.scan(params).promise();
     
-    // 按小时分组点击数据
+    // Group click data by hour
     const hourlyData = Array(24).fill(0);
     
     data.Items.forEach(item => {
@@ -82,12 +82,12 @@ app.get('/api/stats/hourly-trends', async (req, res) => {
       data: hourlyData
     });
   } catch (error) {
-    console.error('获取小时趋势数据失败:', error);
-    res.status(500).json({ error: '获取数据失败' });
+    console.error('Failed to get hourly trend data:', error);
+    res.status(500).json({ error: 'Failed to get data' });
   }
 });
 
-// API 路由 - 获取最热门的短链接
+// API Route - Get top short links
 app.get('/api/stats/top-links', async (req, res) => {
   try {
     const params = {
@@ -97,7 +97,7 @@ app.get('/api/stats/top-links', async (req, res) => {
     
     const data = await dynamodb.scan(params).promise();
     
-    // 按访问次数排序
+    // Sort by visit count
     const sortedLinks = data.Items
       .filter(item => item.visit_count !== undefined)
       .sort((a, b) => (b.visit_count || 0) - (a.visit_count || 0))
@@ -105,12 +105,12 @@ app.get('/api/stats/top-links', async (req, res) => {
     
     res.json(sortedLinks);
   } catch (error) {
-    console.error('获取热门链接失败:', error);
-    res.status(500).json({ error: '获取数据失败' });
+    console.error('Failed to get top links:', error);
+    res.status(500).json({ error: 'Failed to get data' });
   }
 });
 
-// API 路由 - 获取最近创建的短链接
+// API Route - Get recently created short links
 app.get('/api/stats/recent-links', async (req, res) => {
   try {
     const params = {
@@ -120,7 +120,7 @@ app.get('/api/stats/recent-links', async (req, res) => {
     
     const data = await dynamodb.scan(params).promise();
     
-    // 按创建时间排序
+    // Sort by creation time
     const recentLinks = data.Items
       .filter(item => item.created_at !== undefined)
       .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
@@ -132,12 +132,12 @@ app.get('/api/stats/recent-links', async (req, res) => {
     
     res.json(recentLinks);
   } catch (error) {
-    console.error('获取最近链接失败:', error);
-    res.status(500).json({ error: '获取数据失败' });
+    console.error('Failed to get recent links:', error);
+    res.status(500).json({ error: 'Failed to get data' });
   }
 });
 
-// 启动服务器
+// Start server
 app.listen(port, () => {
   console.log(`Admin dashboard running on port ${port}`);
 });
