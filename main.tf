@@ -421,12 +421,17 @@ resource "aws_ecs_service" "admin_service" {
   task_definition = aws_ecs_task_definition.admin_service.arn
   desired_count   = 1
   launch_type     = "FARGATE"
-  force_new_deployment = true
   
   network_configuration {
-    subnets          = aws_subnet.public[*].id
+    subnets          = aws_subnet.private[*].id  # 使用私有子网
     security_groups  = [aws_security_group.admin_service.id]
-    assign_public_ip = true
+    assign_public_ip = false  # 不需要公网IP
+  }
+
+  load_balancer {
+    target_group_arn = aws_lb_target_group.admin.arn
+    container_name   = "admin-service"
+    container_port   = 3000
   }
 }
 
@@ -447,6 +452,7 @@ resource "aws_security_group" "admin_service" {
     to_port     = 3000
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
+    security_groups = [aws_security_group.alb.id]
   }
   
   egress {
