@@ -1,104 +1,121 @@
 #!/bin/bash
-
-# 出错时退出
 set -e
 
-echo "开始 URL 短链接生成器应用部署..."
+deploy_admin_service() {
+    echo "-------- Starting Admin Service Deployment --------"
+    AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+    AWS_REGION="us-east-1"
+    ECR_REPO_NAME="url-shortener-admin"
 
-# 更新 Lambda 函数的文件
-echo "准备 Lambda 函数..."
+    # Check if ECR repository exists
+    if ! aws ecr describe-repositories --repository-names "$ECR_REPO_NAME" &>/dev/null; then
+        echo "ERROR: ECR repository '$ECR_REPO_NAME' does not exist. Run infra deployment first!"
+        exit 1
+    fi
 
-# 创建目录
-mkdir -p lambda-create
-mkdir -p lambda-redirect
-mkdir -p lambda-statistics
+    echo "-------- Logging in to ECR --------"
+    aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
 
-# 复制代码到各自目录
-cp create.js lambda-create/
-cp redirect.js lambda-redirect/
-cp statistics.js lambda-statistics/
+    echo "-------- Building Docker image --------"
+    docker buildx build --platform linux/amd64 -t "$ECR_REPO_NAME:latest" -f ./admin-service/Dockerfile ./admin-service --load
 
-# 创建 package.json
-cat > lambda-create/package.json << EOL
+    echo "-------- Tagging and pushing to ECR --------"
+    docker tag $ECR_REPO_NAME:latest $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPO_NAME:latest
+    docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPO_NAME:latest
+
+    echo "Admin Service deployed to ECR successfully!"
+}
+
+deploy_infrastructure() {
+    echo "-------- Starting Infrastructure Deployment --------"
+
+    # Prepare Lambda ZIPs in the terraform directory
+    echo "Preparing Lambda functions in terraform/ directory..."
+    mkdir -p terraform/lambda-create terraform/lambda-redirect terraform/lambda-statistics
+
+    # Copy Lambda code and dependencies
+    cp create.js terraform/lambda-create/
+    cp redirect.js terraform/lambda-redirect/
+    cp statistics.js terraform/lambda-statistics/
+
+    # Create package.json files
+    cat > terraform/lambda-create/package.json <<EOL
 {
   "name": "url-shortener-create",
   "version": "1.0.0",
-  "description": "Lambda 函数用于创建短链接",
-  "main": "create.js",
   "dependencies": {
     "aws-sdk": "^2.1099.0"
   }
 }
 EOL
 
-cat > lambda-redirect/package.json << EOL
+    cat > terraform/lambda-redirect/package.json <<EOL
 {
   "name": "url-shortener-redirect",
   "version": "1.0.0",
-  "description": "Lambda 函数用于重定向短链接",
-  "main": "redirect.js",
   "dependencies": {
     "aws-sdk": "^2.1099.0"
   }
 }
 EOL
 
-cat > lambda-statistics/package.json << EOL
+    cat > terraform/lambda-statistics/package.json <<EOL
 {
   "name": "url-shortener-statistics",
   "version": "1.0.0",
-  "description": "Lambda 函数用于处理访问统计",
-  "main": "statistics.js",
   "dependencies": {
     "aws-sdk": "^2.1099.0"
   }
 }
 EOL
 
-# 安装依赖
-echo "安装 Lambda 函数依赖..."
-cd lambda-create && npm install --production && cd ..
-cd lambda-redirect && npm install --production && cd ..
-cd lambda-statistics && npm install --production && cd ..
+    # Install dependencies and create ZIPs
+    echo "Building Lambda ZIP files..."
+    cd terraform/lambda-create && npm install --production && zip -r ../lambda-create.zip . && cd ../..
+    cd terraform/lambda-redirect && npm install --production && zip -r ../lambda-redirect.zip . && cd ../..
+    cd terraform/lambda-statistics && npm install --production && zip -r ../lambda-statistics.zip . && cd ../..
 
-# 创建 ZIP 文件
-echo "创建 Lambda 函数 ZIP 文件..."
-cd lambda-create && zip -r ../lambda-create.zip . && cd ..
-cd lambda-redirect && zip -r ../lambda-redirect.zip . && cd ..
-cd lambda-statistics && zip -r ../lambda-statistics.zip . && cd ..
+    # Run Terraform
+    echo "Initializing and applying Terraform..."
+    cd terraform
+    terraform init
+    terraform apply -auto-approve
 
-# 初始化 Terraform
-echo "初始化 Terraform..."
-terraform init
+    # Get outputs
+    API_URL=$(terraform output -raw api_gateway_url)
+    FRONTEND_URL=$(terraform output -raw frontend_url)
+    S3_BUCKET_NAME=$(echo "$FRONTEND_URL" | sed -E 's|http://([^\.]+)\..*|\1|')
 
-# 应用 Terraform 配置
-echo "应用 Terraform 配置..."
-terraform apply -auto-approve
+    # Deploy frontend
+    echo "Deploying frontend to S3..."
+    cd ..
+    sed -i.bak "s|YOUR_API_GATEWAY_URL|$API_URL|g" index.html
+    aws s3 cp index.html s3://$S3_BUCKET_NAME/ --acl public-read
 
-# 获取输出
-echo "获取 API Gateway URL 和 S3 前端 URL..."
-API_URL=$(terraform output -raw api_gateway_url)
-FRONTEND_URL=$(terraform output -raw frontend_url)
-S3_BUCKET_NAME=$(echo $FRONTEND_URL | sed -E 's|http://([^\.]+)\..*|\1|')
+    # Cleanup
+    echo "Cleaning up..."
+    rm -rf terraform/lambda-* terraform/lambda-*.zip index.html.bak
 
-# 更新前端 HTML 文件中的 API 端点
-echo "更新前端 HTML 中的 API 端点..."
-sed -i.bak "s|YOUR_API_GATEWAY_URL|$API_URL|g" index.html
+    echo "Infrastructure deployed successfully!"
+    echo "API Gateway URL: $API_URL"
+    echo "Frontend URL: $FRONTEND_URL"
+}
 
-# 上传前端文件到 S3
-echo "上传前端文件到 S3..."
-aws s3 cp index.html s3://$S3_BUCKET_NAME/ --acl public-read
+main() {
+    echo "========================================"
+    echo " URL Shortener Full Deployment Script "
+    echo "========================================"
+    
+    # 强制先部署 infra，再部署 admin
+    if [ "$1" == "admin" ]; then
+        deploy_admin_service
+    elif [ "$1" == "infra" ]; then
+        deploy_infrastructure
+    else
+        # 默认顺序：先 infra，后 admin
+        deploy_infrastructure
+        deploy_admin_service
+    fi
+}
 
-# 清理临时文件
-echo "清理临时文件..."
-rm -rf lambda-create lambda-redirect lambda-statistics
-rm -f index.html.bak
-
-echo ""
-echo "URL 短链接生成器部署完成！"
-echo "----------------------------------------"
-echo "API Gateway URL: $API_URL"
-echo "前端 URL: $FRONTEND_URL"
-echo ""
-echo "要测试短链接生成器，请访问: $FRONTEND_URL"
-echo "----------------------------------------"
+main "$@"
