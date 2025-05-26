@@ -4,6 +4,29 @@ A serverless URL shortener built with AWS services, similar to bit.ly. This proj
 
 ## Architecture
 
+┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
+│   Web Frontend  │───▶│   API Gateway    │───▶│  Lambda: Create │
+│   (index.html)  │    │                  │    │   (create.py)   │
+└─────────────────┘    └──────────────────┘    └─────────────────┘
+                                │                        │
+                                │                        ▼
+                                │               ┌─────────────────┐
+                                │               │    DynamoDB     │
+                                │               │   (URL Store)   │
+                                │               └─────────────────┘
+                                │                        │
+                                ▼                        │
+                       ┌─────────────────┐              │
+                       │ Lambda: Redirect │◀─────────────┘
+                       │  (redirect.py)   │
+                       └─────────────────┘
+                                │
+                                ▼
+                       ┌─────────────────┐    ┌─────────────────┐
+                       │   SQS Queue     │───▶│Lambda: Statistics│
+                       │  (Analytics)    │    │ (statistics.py) │
+                       └─────────────────┘    └─────────────────┘
+                       
 This project uses a serverless architecture on AWS with the following services:
 
 - **AWS Lambda**: Handles URL shortening and redirection logic
@@ -24,12 +47,11 @@ This project uses a serverless architecture on AWS with the following services:
 ```
 .
 ├── main.tf                    # Terraform infrastructure configuration
-├── create.js                  # Lambda function for creating short URLs
-├── redirect.js                # Lambda function for redirection
-├── statistics.js              # Lambda function for processing statistics
+├── create.py                  # Lambda function for creating short URLs
+├── redirect.py                # Lambda function for redirection
+├── statistics.py              # Lambda function for processing statistics
 ├── index.html                 # Simple web frontend
 ├── package.sh                 # Script to package Lambda functions
-├── test-shortener.js          # Testing script
 └── README.md                  # Project documentation
 ```
 
@@ -53,8 +75,8 @@ This project uses a serverless architecture on AWS with the following services:
 2. **Package Lambda functions**
 
    ```bash
-   chmod +x package.sh
-   ./package.sh
+   chmod +x deploy.sh
+   ./deploy.sh
    ```
 
 3. **Initialize Terraform**
@@ -72,20 +94,6 @@ This project uses a serverless architecture on AWS with the following services:
 5. **Take note of the outputs**
 
    After deployment, Terraform will output the API Gateway URL and CloudFront domain name. Save these for accessing your URL shortener.
-
-### Testing
-
-1. **Using the web interface**
-   
-   Open the CloudFront domain in your browser to access the web interface.
-
-2. **Using the test script**
-
-   ```bash
-   node test-shortener.js
-   ```
-
-   Enter your API Gateway URL or CloudFront domain when prompted, followed by a long URL to test the shortening and redirection.
 
 ## Implementation Details
 

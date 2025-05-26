@@ -34,9 +34,9 @@ deploy_infrastructure() {
     mkdir -p terraform/lambda-create terraform/lambda-redirect terraform/lambda-statistics
 
     # Copy Lambda code and dependencies
-    cp create.js terraform/lambda-create/
-    cp redirect.js terraform/lambda-redirect/
-    cp statistics.js terraform/lambda-statistics/
+    cp create.py terraform/lambda-create/
+    cp redirect.py terraform/lambda-redirect/
+    cp statistics.py terraform/lambda-statistics/
 
     # Create package.json files
     cat > terraform/lambda-create/package.json <<EOL
