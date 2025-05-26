@@ -4,6 +4,7 @@ A serverless URL shortener built with AWS services, similar to bit.ly. This proj
 
 ## Architecture
 
+```
 ┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
 │   Web Frontend  │───▶│   API Gateway    │───▶│  Lambda: Create │
 │   (index.html)  │    │                  │    │   (create.py)   │
@@ -26,7 +27,8 @@ A serverless URL shortener built with AWS services, similar to bit.ly. This proj
                        │   SQS Queue     │───▶│Lambda: Statistics│
                        │  (Analytics)    │    │ (statistics.py) │
                        └─────────────────┘    └─────────────────┘
-                       
+```
+
 This project uses a serverless architecture on AWS with the following services:
 
 - **AWS Lambda**: Handles URL shortening and redirection logic
@@ -45,7 +47,7 @@ This project uses a serverless architecture on AWS with the following services:
 ## Project Structure
 
 ```
-.
+url-shortener
 ├── main.tf                    # Terraform infrastructure configuration
 ├── create.py                  # Lambda function for creating short URLs
 ├── redirect.py                # Lambda function for redirection
@@ -63,12 +65,14 @@ This project uses a serverless architecture on AWS with the following services:
 - [AWS CLI](https://aws.amazon.com/cli/) configured with your credentials
 - [Terraform](https://www.terraform.io/downloads.html) installed
 - [Node.js](https://nodejs.org/) (for local testing)
+- [Python 3.x](https://www.python.org/) (for local development and testing)
 
 ### Deployment Steps
 
 1. **Clone the repository**
 
    ```bash
+   git clone https://github.com/rainUee/url-shortener
    cd url-shortener
    ```
 
